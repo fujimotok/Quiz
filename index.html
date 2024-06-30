@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz App</title>
+    <!-- jQuery CDN -->
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <!-- Dexie.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dexie/4.0.7/dexie.min.js" integrity="sha512-882VotT07mOQRzqIxsyxHzJX0XUaoeee3qXp4THg1A0KI0XFnWFAaLFQm0x6OW3pHSIipVZW+gzQ1w9b6uvkVw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style type="text/css">
+      /* 背景色とテキスト色の設定 */
+      body {
+          background-color: #112;
+          color: #EEE;
+      }
+
+      h1 {
+          font-size: 20px;
+          margin: 4px;
+      }
+
+      button {
+          color: #EEE;
+      }
+
+      /* Glassmorphism card effect */
+      .card {
+          backdrop-filter: blur(16px) saturate(180%);
+          -webkit-backdrop-filter: blur(16px) saturate(180%);
+          background-color: rgba(11, 11, 22, 0.75);
+          border-radius: 12px;
+          padding: 10px 20px;
+          border: 1px solid rgba(255, 255, 255, 0.125);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Quiz App</h1>
+      <details>
+        <summary>❔ How to use.</summary>
+        <p>Please create and upload a Json file in the following format.</p>
+        <p>[{ "question": "Q. ", "answer": "A. " }, ...]</p>
+        <p>Data will be uploaded to local IndexedDB. It will not be uploaded to the network.</p>
+        <input id="fileElem" accept=".json" style="display: none;" type="file"/>
+        <button id="upload" class="card">Upload</button>
+      </details>
+    </div>
+    <hr style="height:8px; visibility:hidden;"> 
+    <div class="card">
+      <div style="display: flex;">
+        <h1>Question</h1>
+        <h1 id="number"></h1>
+        <span style="width: 16px;"></span>
+        <button id="nextQuestion" class="card">Next</button>
+      </div>
+      <p id="question"></p>
+    </div>
+    <hr style="height:8px; visibility:hidden;"> 
+    <div class="card">
+      <details>
+        <summary>Show Answer</summary>
+        <p id="answer"></p>
+      </details>
+    </div>
+
+    <script>
+      // Initialize IndexedDB
+      const db = new Dexie('MyDatabase');
+      db.version(1).stores({
+        problems: '++id, question, answer',
+      });
+
+      // Load IndexedDB
+      async function readJsonFile(file) {
+        const response = await fetch(data.json);
+        const data = await response.json();
+        db.problems.bulkAdd(data);
+      }
+      
+      // Get a random problem
+      async function getRandomProblem() {
+        const count = await db.problems.count();
+        const randomIndex = Math.floor(Math.random() * count);
+        return db.problems.offset(randomIndex).first();
+      }
+
+      // Display a random problem
+      async function displayRandomProblem() {
+        const problem = await getRandomProblem();
+        $('#number').text(problem.id);
+        $('#question').text(problem.question);
+        $('#answer').text(problem.answer);
+      }
+
+      // Upload button
+      $('#upload').on('click', function () {
+        $('#fileElem').click();
+      });
+
+      // Next question button
+      $('#nextQuestion').on('click', function () {
+        displayRandomProblem();
+        $('details').prop("open", false);
+      });
+
+      // File load
+      $('input[type=file]').on('change', function(e) {
+        const [file] = e.target.files;
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = async (event) => {
+            const jsonData = JSON.parse(event.target.result);
+            await db.problems.clear(); // データを削除
+            await db.problems.bulkAdd(jsonData); // データを追加
+          };
+          reader.readAsText(file);
+        }
+      });
+
+      // Initial display
+      displayRandomProblem();
+    </script>
+  </body>
+</html>
