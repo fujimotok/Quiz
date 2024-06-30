@@ -89,9 +89,9 @@
       // Display a random problem
       async function displayRandomProblem() {
         const problem = await getRandomProblem();
-        $('#number').text(problem.id);
-        $('#question').text(problem.question);
-        $('#answer').text(problem.answer);
+        $('#number').html(problem.id);
+        $('#question').html(problem.question.replace(/\\n/g, '<br>'));
+        $('#answer').html(problem.answer.replace(/\\n/g, '<br>'));
       }
 
       // Upload button
